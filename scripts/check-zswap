@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Shows whether zwap is active ornot and if active, give swap parameters if run with the Template:$ic command
+# display a list of all applications / services that take up swap and how much they take up in descending order
+
+#Check whether running as root
+if [ "$(whoami)" = 'root' ]; then
+  dmesg | grep "zswap:" | grep --silent "load"
+  if $? -eq 0 ; then
+    # zswap is active
+    echo "zswap information:"
+    grep --recursive --color=none . /sys/kernel/debug/zswap/
+    read -n 1 -s -r -p "Press any key to continue"
+  else
+    echo "[warning] zwap not active. Continuing"
+  fi
+else
+  echo "[warning] Not running as root: skipping zswap info"
+fi
+for szFile in /proc/*/status ; do
+  awk '/VmSwap|Name/{printf $2 "\t" $3}END{ print "" }' "$szFile"
+done | sort --key 2 --numeric --reverse | more
